@@ -564,3 +564,4 @@ ERROR 2026-06-03 17:11:41,652 utils 14528 17004 SMS error: Credentials are requi
 ERROR 2026-06-03 17:11:55,486 utils 14528 17004 SMS error: Credentials are required to create a TwilioClient
 ERROR 2026-06-03 17:19:08,648 utils 15964 9884 SMS error: Credentials are required to create a TwilioClient
 ERROR 2026-06-03 17:21:33,253 utils 3188 5856 SMS error: Credentials are required to create a TwilioClient
+ERROR 2026-06-03 17:26:22,334 utils 3972 7496 SMS error: Credentials are required to create a TwilioClient
