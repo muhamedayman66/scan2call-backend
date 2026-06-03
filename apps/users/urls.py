@@ -17,6 +17,6 @@ urlpatterns = [
     path("me/", views.UserProfileView.as_view(), name="user-profile"),
     path("me/photo/", views.upload_profile_photo, name="upload-photo"),
     path("me/fcm-token/", views.update_fcm_token, name="update-fcm-token"),
-    path("logout/", views.delete_account, name="delete-account"),
+    path("delete/", views.delete_account, name="delete-account"),
     path("", include(router.urls)),
 ]

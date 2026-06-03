@@ -555,3 +555,12 @@ Traceback (most recent call last):
     )
 apps.users.models.CustomUser.DoesNotExist: CustomUser matching query does not exist.
 ERROR 2026-06-03 15:09:23,914 runserver 4936 14752 [35;1mHTTP POST /api/auth/refresh/ 500 [0.86, 127.0.0.1:49713][0m
+ERROR 2026-06-03 15:53:49,903 utils 7860 6036 SMS error: Credentials are required to create a TwilioClient
+ERROR 2026-06-03 16:10:05,564 utils 7860 6036 SMS error: Credentials are required to create a TwilioClient
+ERROR 2026-06-03 16:37:10,042 utils 13520 13072 SMS error: Credentials are required to create a TwilioClient
+ERROR 2026-06-03 16:53:23,574 utils 14528 17004 SMS error: Credentials are required to create a TwilioClient
+ERROR 2026-06-03 17:11:25,296 utils 14528 17004 SMS error: Credentials are required to create a TwilioClient
+ERROR 2026-06-03 17:11:41,652 utils 14528 17004 SMS error: Credentials are required to create a TwilioClient
+ERROR 2026-06-03 17:11:55,486 utils 14528 17004 SMS error: Credentials are required to create a TwilioClient
+ERROR 2026-06-03 17:19:08,648 utils 15964 9884 SMS error: Credentials are required to create a TwilioClient
+ERROR 2026-06-03 17:21:33,253 utils 3188 5856 SMS error: Credentials are required to create a TwilioClient

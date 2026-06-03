@@ -151,6 +151,29 @@ class InstapayPaymentRequestViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         import uuid
+        from apps.notifications.models import NotificationLog
+        from apps.notifications.utils import send_fcm_notification
 
         pay_id = f"pay-{uuid.uuid4().hex[:8]}"
-        serializer.save(user=self.request.user, id=pay_id)
+        req = serializer.save(user=self.request.user, id=pay_id)
+        
+        # InstaPay Pending Notification
+        title_en = "Payment Request Received"
+        title_ar = "تم استلام طلب الدفع"
+        msg_en = f"We have received your InstaPay payment request for {req.amount} EGP. It is currently under review."
+        msg_ar = f"لقد استلمنا طلب الدفع الخاص بك عبر إنستا باي بقيمة {req.amount} ج.م. وجاري المراجعة الآن."
+        
+        NotificationLog.objects.create(
+            user=self.request.user,
+            type="subscription",
+            title=title_en,
+            title_ar=title_ar,
+            message=msg_en,
+            message_ar=msg_ar
+        )
+        send_fcm_notification(
+            user=self.request.user,
+            title=title_en,
+            message=msg_en,
+            data={"type": "subscription"}
+        )

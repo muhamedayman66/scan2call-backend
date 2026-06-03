@@ -35,7 +35,6 @@ def _patch_django_314():
         pass
 _patch_django_314()
 
-import os
 import dj_database_url
 from decouple import config
 
@@ -44,10 +43,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config("SECRET_KEY", default="django-insecure-change-me-in-production")
 DEBUG = config("DEBUG", default=True, cast=bool)
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="*").split(",")
-
-RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
-if RENDER_EXTERNAL_HOSTNAME:
-    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
 INSTALLED_APPS = [
     "daphne",
@@ -79,7 +74,6 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
@@ -120,37 +114,21 @@ DATABASES = {
     )
 }
 
-# Redis configuration for Render (or any environment with REDIS_URL)
-REDIS_URL = os.environ.get("REDIS_URL", config("REDIS_URL", default=None))
+# Channels — In-Memory للتطوير (مش محتاج Redis)
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer",
+    },
+}
 
-if REDIS_URL:
-    CHANNEL_LAYERS = {
-        "default": {
-            "BACKEND": "channels_redis.core.RedisChannelLayer",
-            "CONFIG": {
-                "hosts": [REDIS_URL],
-            },
-        },
-    }
-    CELERY_BROKER_URL = REDIS_URL
-    CELERY_RESULT_BACKEND = REDIS_URL
-    CELERY_TASK_ALWAYS_EAGER = False
-else:
-    # Channels — In-Memory للتطوير (مش محتاج Redis)
-    CHANNEL_LAYERS = {
-        "default": {
-            "BACKEND": "channels.layers.InMemoryChannelLayer",
-        },
-    }
-    # Celery — معطّل للتطوير المحلي
-    CELERY_BROKER_URL = "memory://"
-    CELERY_RESULT_BACKEND = "cache+memory://"
-    CELERY_TASK_ALWAYS_EAGER = True  # بيشغّل الـ tasks فوراً من غير worker
-
+# Celery — معطّل للتطوير المحلي
+CELERY_BROKER_URL = "memory://"
+CELERY_RESULT_BACKEND = "cache+memory://"
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = "Africa/Cairo"
+CELERY_TASK_ALWAYS_EAGER = True  # بيشغّل الـ tasks فوراً من غير worker
 
 # Auth
 AUTH_USER_MODEL = "users.CustomUser"

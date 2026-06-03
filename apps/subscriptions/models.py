@@ -142,6 +142,7 @@ class InstapayPaymentRequest(models.Model):
                 if old_obj.status != "APPROVED" and self.status == "APPROVED":
                     from datetime import timedelta
 
+                    from apps.notifications.utils import send_fcm_notification
                     from apps.notifications.models import NotificationLog
 
                     user = self.user
@@ -151,13 +152,50 @@ class InstapayPaymentRequest(models.Model):
                     user.subscription_expiry = timezone.now() + timedelta(days=30)
                     user.save()
 
+                    title_en = "Subscription Activated"
+                    title_ar = "تم تفعيل باقتك بنجاح"
+                    msg_en = f"Your payment has been approved. Your {self.plan_id} plan is now active."
+                    msg_ar = f"لقد تمت الموافقة على طلب الدفع الخاص بك. باقة {self.plan_id} مفعلة الآن."
+
                     NotificationLog.objects.create(
                         user=user,
                         type="subscription",
-                        title="تم تفعيل باقتك بنجاح",
-                        title_ar="تم تفعيل باقتك بنجاح",
-                        message=f"لقد تمت الموافقة على طلب الدفع الخاص بك. باقة {self.plan_id} مفعلة الآن.",
-                        message_ar=f"لقد تمت الموافقة على طلب الدفع الخاص بك. باقة {self.plan_id} مفعلة الآن.",
+                        title=title_en,
+                        title_ar=title_ar,
+                        message=msg_en,
+                        message_ar=msg_ar,
+                        priority="high"
+                    )
+                    send_fcm_notification(
+                        user=user,
+                        title=title_ar,
+                        message=msg_ar,
+                        data={"type": "subscription"}
+                    )
+                    
+                elif old_obj.status != "REJECTED" and self.status == "REJECTED":
+                    from apps.notifications.utils import send_fcm_notification
+                    from apps.notifications.models import NotificationLog
+
+                    title_en = "Payment Request Rejected"
+                    title_ar = "تم رفض طلب الدفع"
+                    msg_en = f"Your InstaPay payment request was rejected. Reason: {self.rejection_reason or 'None provided'}."
+                    msg_ar = f"تم رفض طلب الدفع الخاص بك. السبب: {self.rejection_reason or 'غير محدد'}."
+
+                    NotificationLog.objects.create(
+                        user=self.user,
+                        type="subscription",
+                        title=title_en,
+                        title_ar=title_ar,
+                        message=msg_en,
+                        message_ar=msg_ar,
+                        priority="high"
+                    )
+                    send_fcm_notification(
+                        user=self.user,
+                        title=title_ar,
+                        message=msg_ar,
+                        data={"type": "subscription"}
                     )
             except InstapayPaymentRequest.DoesNotExist:
                 pass

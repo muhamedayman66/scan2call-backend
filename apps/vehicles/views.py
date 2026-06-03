@@ -12,6 +12,8 @@ from rest_framework.response import Response
 
 from apps.locations.models import TrackingSession
 from apps.locations.serializers import VehicleLocationSerializer
+from apps.notifications.utils import send_fcm_notification
+from apps.notifications.models import NotificationLog
 
 from .models import Vehicle
 from .serializers import VehicleListSerializer, VehicleSerializer
@@ -44,7 +46,28 @@ class VehicleViewSet(viewsets.ModelViewSet):
                 {"error": f"Vehicle limit ({limit}) reached for your current plan."}
             )
 
-        serializer.save(owner=user)
+        vehicle = serializer.save(owner=user)
+
+        # Vehicle Added Notification
+        title_en = "Vehicle Added"
+        title_ar = "تم إضافة مركبة"
+        msg_en = f"Your vehicle {vehicle.brand} {vehicle.model} has been added successfully."
+        msg_ar = f"تم إضافة سيارتك {vehicle.brand} {vehicle.model} بنجاح."
+        
+        NotificationLog.objects.create(
+            user=user,
+            type="system",
+            title=title_en,
+            title_ar=title_ar,
+            message=msg_en,
+            message_ar=msg_ar
+        )
+        send_fcm_notification(
+            user=user,
+            title=title_en,
+            message=msg_en,
+            data={"type": "system"}
+        )
 
     @action(detail=True, methods=["get"])
     def qr_code(self, request, pk=None):

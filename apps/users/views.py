@@ -10,7 +10,8 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from apps.notifications.utils import send_sms
+from apps.notifications.utils import send_sms, send_fcm_notification
+from apps.notifications.models import NotificationLog
 
 from .models import OTPCode
 from .serializers import (CustomTokenObtainPairSerializer,
@@ -39,8 +40,36 @@ class RegisterView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
 
+        # Automatically assign the Basic (Free) plan upon registration
+        user.subscription_status = 'ACTIVE'
+        user.subscription_plan_id = 'free'
+        user.subscription_started_at = timezone.now()
+        user.subscription_expiry = timezone.now() + timedelta(days=30)
+        user.save()
+
         # Generate tokens
         refresh = RefreshToken.for_user(user)
+
+        # Welcome Notification with Basic Plan info
+        title_en = "Welcome to Scan2Call!"
+        title_ar = "مرحباً بك في Scan2Call!"
+        msg_en = "Your account has been created successfully. We've gifted you the Standard Free Alpha plan for 30 days!"
+        msg_ar = "تم إنشاء حسابك بنجاح. لقد قمنا بتفعيل الباقة الأساسية المجانية لك لمدة 30 يوماً!"
+        
+        NotificationLog.objects.create(
+            user=user,
+            type="system",
+            title=title_en,
+            title_ar=title_ar,
+            message=msg_en,
+            message_ar=msg_ar
+        )
+        send_fcm_notification(
+            user=user,
+            title=title_en,
+            message=msg_en,
+            data={"type": "system"}
+        )
 
         return Response(
             {
@@ -177,6 +206,28 @@ def reset_password(request):
         otp.is_used = True
         otp.save()
 
+        # Password Reset Notification
+        title_en = "Password Changed"
+        title_ar = "تم تغيير كلمة المرور"
+        msg_en = "Your password has been reset successfully. If you didn't do this, please contact support."
+        msg_ar = "تم تغيير كلمة المرور بنجاح. إذا لم تقم بهذا الإجراء، يرجى التواصل مع الدعم الفني."
+        
+        NotificationLog.objects.create(
+            user=user,
+            type="system",
+            title=title_en,
+            title_ar=title_ar,
+            message=msg_en,
+            message_ar=msg_ar,
+            priority="high"
+        )
+        send_fcm_notification(
+            user=user,
+            title=title_en,
+            message=msg_en,
+            data={"type": "system"}
+        )
+
         return Response({"message": "Password reset successfully"})
     except User.DoesNotExist:
         return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
@@ -213,8 +264,7 @@ def upload_profile_photo(request):
 def delete_account(request):
     """Delete user account"""
     user = request.user
-    user.is_active = False
-    user.save()
+    user.delete()
 
     return Response({"message": "Account deleted successfully"})
 
@@ -242,7 +292,9 @@ from rest_framework import viewsets
 class UserViewSet(viewsets.ModelViewSet):
     """ViewSet for Admin/Appsmith to manage all users"""
 
-    queryset = User.objects.all()
+    def get_queryset(self):
+        return User.objects.filter(is_staff=False, is_superuser=False)
+
     serializer_class = UserSerializer
     # Usually you'd restrict this to IsAdminUser, but making it IsAuthenticated for now so Appsmith can connect easily
     permission_classes = [permissions.IsAuthenticated]

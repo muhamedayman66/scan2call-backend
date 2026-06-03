@@ -83,10 +83,10 @@ class Vehicle(models.Model):
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="vehicles"
     )
 
-    brand = models.CharField(max_length=50, choices=BRAND_CHOICES)
+    brand = models.CharField(max_length=100)
     model = models.CharField(max_length=100)
     year = models.IntegerField()
-    color = models.CharField(max_length=20, choices=COLOR_CHOICES)
+    color = models.CharField(max_length=50)
     plate_number = models.CharField(max_length=20, unique=True, db_index=True)
 
     photo_1 = models.TextField(null=True, blank=True)
@@ -112,7 +112,7 @@ class Vehicle(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.get_brand_display()} {self.model} ({self.plate_number})"
+        return f"{self.brand} {self.model} ({self.plate_number})"
 
     @property
     def photos(self):
