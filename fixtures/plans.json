@@ -1,0 +1,78 @@
+[
+  {
+    "model": "subscriptions.plan",
+    "pk": 1,
+    "fields": {
+      "name": "Free",
+      "name_ar": "مجاني",
+      "description": "Basic features for one vehicle",
+      "description_ar": "ميزات أساسية لسيارة واحدة",
+      "price_egp": "0.00",
+      "duration_days": 30,
+      "max_vehicles": 1,
+      "sticker_count": 0,
+      "allow_phone": false,
+      "location_tracking": false,
+      "history_days": 7,
+      "is_active": true,
+      "sort_order": 1
+    }
+  },
+  {
+    "model": "subscriptions.plan",
+    "pk": 2,
+    "fields": {
+      "name": "Basic",
+      "name_ar": "أساسي",
+      "description": "Perfect for personal use",
+      "description_ar": "مثالي للاستخدام الشخصي",
+      "price_egp": "99.00",
+      "duration_days": 30,
+      "max_vehicles": 2,
+      "sticker_count": 2,
+      "allow_phone": true,
+      "location_tracking": false,
+      "history_days": 30,
+      "is_active": true,
+      "sort_order": 2
+    }
+  },
+  {
+    "model": "subscriptions.plan",
+    "pk": 3,
+    "fields": {
+      "name": "Pro",
+      "name_ar": "احترافي",
+      "description": "Best for families",
+      "description_ar": "الأفضل للعائلات",
+      "price_egp": "199.00",
+      "duration_days": 30,
+      "max_vehicles": 5,
+      "sticker_count": 5,
+      "allow_phone": true,
+      "location_tracking": true,
+      "history_days": 90,
+      "is_active": true,
+      "sort_order": 3
+    }
+  },
+  {
+    "model": "subscriptions.plan",
+    "pk": 4,
+    "fields": {
+      "name": "Business",
+      "name_ar": "أعمال",
+      "description": "Unlimited vehicles and features",
+      "description_ar": "سيارات وميزات غير محدودة",
+      "price_egp": "499.00",
+      "duration_days": 30,
+      "max_vehicles": 999,
+      "sticker_count": 20,
+      "allow_phone": true,
+      "location_tracking": true,
+      "history_days": 365,
+      "is_active": true,
+      "sort_order": 4
+    }
+  }
+]

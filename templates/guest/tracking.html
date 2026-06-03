@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Scan2Call | Live Tracking</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <style>
+        [x-cloak] { display: none !important; }
+        .rtl { direction: rtl; text-align: right; font-family: 'Tajawal', sans-serif; }
+        .ltr { direction: ltr; text-align: left; font-family: 'Outfit', sans-serif; }
+        
+        /* 3D Glassmorphism Utilities */
+        .glass-panel {
+            background: linear-gradient(145deg, rgba(21, 21, 42, 0.85) 0%, rgba(15, 15, 28, 0.95) 100%);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5), inset 0 1px 2px rgba(255, 255, 255, 0.1);
+        }
+        .text-gradient {
+            background: linear-gradient(to right, #ffffff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Map styling for dark theme */
+        .leaflet-layer,
+        .leaflet-control-zoom-in,
+        .leaflet-control-zoom-out,
+        .leaflet-control-attribution {
+            filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+        }
+
+        /* Pulse animation for map marker */
+        .pulse-marker-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+        }
+        .pulse-marker-dot {
+            width: 16px;
+            height: 16px;
+            background-color: #1A73E8;
+            border-radius: 50%;
+            border: 3px solid white;
+            z-index: 2;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+        .pulse-marker-ring {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-color: #1A73E8;
+            border-radius: 50%;
+            z-index: 1;
+            opacity: 0.5;
+            animation: pulse-ring 2s infinite ease-out;
+        }
+        @keyframes pulse-ring {
+            0% { transform: scale(0.8); opacity: 0.8; }
+            100% { transform: scale(2.5); opacity: 0; }
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1A73E8',
+                        secondary: '#FF6D00',
+                        bgDarkBase: '#0F0F1C',
+                        bgDarkCard: '#15152A',
+                        borderDark: 'rgba(30, 41, 59, 0.8)',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-bgDarkBase text-slate-200 overflow-hidden m-0 p-0 h-screen w-screen relative" 
+      x-data="trackingApp()" 
+      x-init="initApp()"
+      :class="isAr ? 'rtl' : 'ltr'">
+
+    <!-- Map Container -->
+    <div id="map" class="absolute inset-0 z-0 h-full w-full"></div>
+
+    <!-- Universal Scan2Call Header (Floating) -->
+    <div class="absolute top-0 left-0 w-full p-4 z-20 pointer-events-none">
+        <div class="max-w-xl mx-auto flex justify-between items-center bg-black/40 backdrop-blur-md border border-white/10 p-3 rounded-2xl shadow-xl pointer-events-auto">
+            <div class="flex items-center space-x-3" :class="isAr ? 'space-x-reverse' : ''">
+                <div class="flex items-center justify-center w-10 h-10 bg-primary/20 rounded-xl border border-primary/30 shadow-inner">
+                    <svg viewBox="0 0 24 24" fill="none" class="w-5 h-5 text-primary drop-shadow-[0_0_8px_rgba(26,115,232,0.8)]" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 7V5a2 2 0 0 1 2-2h2"></path>
+                        <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
+                        <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path>
+                        <path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
+                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="text-sm font-black tracking-tight text-white drop-shadow-md">Scan2Call</h2>
+                    <p class="text-[9px] text-primary font-bold uppercase tracking-widest" x-text="isAr ? 'تتبع المستأجر' : 'Tenant Tracking'"></p>
+                </div>
+            </div>
+            
+            <button @click="toggleLang()" class="text-[10px] font-bold px-3 py-1.5 rounded-lg flex items-center space-x-1.5 cursor-pointer transition-all bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10 hover:text-white shadow-sm pointer-events-auto" :class="isAr ? 'space-x-reverse' : ''">
+                <i data-lucide="globe" class="h-3 w-3 text-secondary"></i>
+                <span x-text="lang === 'ar' ? 'EN' : 'عربي'"></span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Permission Overlay -->
+    <div x-show="!isTracking && !isStopped" x-transition.opacity class="absolute inset-0 z-50 bg-bgDarkBase/95 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="glass-panel p-8 rounded-[2rem] max-w-sm w-full text-center relative overflow-hidden">
+            <div class="absolute -top-10 -right-10 w-32 h-32 bg-primary/20 rounded-full blur-2xl"></div>
+            <div class="w-16 h-16 mx-auto bg-primary/20 rounded-2xl flex items-center justify-center border border-primary/30 mb-6 shadow-[0_0_20px_rgba(26,115,232,0.3)]">
+                <i data-lucide="map-pin" class="w-8 h-8 text-primary"></i>
+            </div>
+            <h3 class="text-2xl font-black text-white mb-3" x-text="t.permTitle"></h3>
+            <p class="text-sm text-slate-400 mb-8 leading-relaxed" x-text="t.permDesc"></p>
+            <button @click="requestTracking()" class="w-full bg-gradient-to-r from-primary to-blue-600 hover:from-blue-600 hover:to-blue-800 text-white font-bold py-4 rounded-xl transition-all shadow-[0_8px_25px_rgba(26,115,232,0.5)] flex items-center justify-center space-x-2" :class="isAr ? 'space-x-reverse' : ''">
+                <i data-lucide="navigation" class="w-5 h-5"></i>
+                <span x-text="t.startBtn"></span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Active Tracking Bottom Sheet -->
+    <div x-show="isTracking || isStopped" x-transition.translate.y.bottom class="absolute bottom-6 left-0 w-full px-4 z-40">
+        <div class="max-w-xl mx-auto glass-panel p-5 rounded-[2rem] relative overflow-hidden">
+            <!-- Background Glow based on status -->
+            <div class="absolute -top-20 -right-20 w-40 h-40 rounded-full blur-3xl opacity-20 transition-colors duration-500" 
+                 :class="isStopped ? 'bg-slate-500' : (status === 'active' ? 'bg-green-500' : 'bg-red-500')"></div>
+            
+            <template x-if="!isStopped">
+                <div class="relative z-10 space-y-4">
+                    <!-- Header with Status -->
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-2 px-3 py-1.5 rounded-lg border transition-colors duration-300" :class="[isAr ? 'space-x-reverse' : '', status === 'active' ? 'bg-green-500/10 border-green-500/20 text-green-400' : 'bg-red-500/10 border-red-500/20 text-red-400']">
+                            <span class="w-2 h-2 rounded-full animate-pulse" :class="status === 'active' ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)]' : 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]'"></span>
+                            <span class="text-xs font-bold uppercase tracking-wide" x-text="t[status]"></span>
+                        </div>
+                    </div>
+
+                    <!-- Vehicle Info -->
+                    <div>
+                        <h2 class="text-xl font-black text-white tracking-tight">{{ vehicle_name }}</h2>
+                        <p class="text-primary font-bold text-sm tracking-widest mt-1">{{ vehicle_plate }}</p>
+                    </div>
+
+                    <!-- Instruction Box -->
+                    <div class="bg-blue-500/10 border border-blue-500/20 p-3 rounded-xl flex items-start space-x-3" :class="isAr ? 'space-x-reverse' : ''">
+                        <i data-lucide="info" class="w-5 h-5 text-primary shrink-0 mt-0.5"></i>
+                        <p class="text-xs text-slate-300 leading-relaxed" x-html="t.instruction"></p>
+                    </div>
+
+                    <!-- Stop Button -->
+                    <button @click="stopTracking()" class="w-full bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 font-bold py-3.5 rounded-xl transition-all flex items-center justify-center space-x-2" :class="isAr ? 'space-x-reverse' : ''">
+                        <i data-lucide="power" class="w-4 h-4"></i>
+                        <span x-text="t.stopBtn"></span>
+                    </button>
+                </div>
+            </template>
+
+            <!-- Stopped State -->
+            <template x-if="isStopped">
+                <div class="relative z-10 text-center py-4">
+                    <div class="w-16 h-16 mx-auto bg-green-500/20 rounded-full flex items-center justify-center border border-green-500/30 mb-4 shadow-[0_0_20px_rgba(34,197,94,0.2)]">
+                        <i data-lucide="check-circle-2" class="w-8 h-8 text-green-400"></i>
+                    </div>
+                    <h2 class="text-xl font-black text-white mb-2" x-text="t.stopTitle"></h2>
+                    <p class="text-sm text-slate-400" x-text="t.stopDesc"></p>
+                </div>
+            </template>
+        </div>
+    </div>
+
+    <script>
+        const translations = {
+            en: {
+                permTitle: "Location Permission",
+                permDesc: "To share your live location with the vehicle owner securely, we need permission to access your device's GPS.",
+                startBtn: "Allow & Start Tracking",
+                connecting: "Connecting...",
+                active: "Live Tracking Active",
+                lost: "Signal Lost",
+                stopped: "Tracking Ended",
+                instruction: "<strong>Important:</strong> Keep this page open in your browser while driving to ensure continuous location sharing.",
+                stopBtn: "Stop Sharing Location",
+                alertGeo: "Geolocation is not supported by your browser.",
+                alertExp: "Your secure tracking session has expired.",
+                confirmStop: "Are you sure you want to stop sharing your location?",
+                stopTitle: "Sharing Successfully Stopped",
+                stopDesc: "You are no longer sharing your location. You can safely close this page."
+            },
+            ar: {
+                permTitle: "إذن تتبع الموقع",
+                permDesc: "لمشاركة موقعك المباشر مع المالك بشكل آمن، نحتاج إلى إذن للوصول إلى نظام تحديد المواقع (GPS) الخاص بجهازك.",
+                startBtn: "السماح وبدء التتبع",
+                connecting: "جاري الاتصال...",
+                active: "التتبع المباشر نشط",
+                lost: "فقدان إشارة الـ GPS",
+                stopped: "تم إنهاء التتبع",
+                instruction: "<strong>هام جداً:</strong> يرجى إبقاء هذه الصفحة مفتوحة أثناء القيادة لضمان استمرار مشاركة الموقع مع المالك.",
+                stopBtn: "إيقاف مشاركة الموقع",
+                alertGeo: "متصفحك لا يدعم خاصية تحديد الموقع.",
+                alertExp: "انتهت صلاحية جلسة التتبع الآمنة الخاصة بك.",
+                confirmStop: "هل أنت متأكد أنك تريد إيقاف مشاركة موقعك؟",
+                stopTitle: "تم إيقاف المشاركة بنجاح",
+                stopDesc: "لم تعد تشارك موقعك الآن. يمكنك إغلاق هذه الصفحة بأمان."
+            }
+        };
+
+        function trackingApp() {
+            return {
+                lang: navigator.language.startsWith('ar') ? 'ar' : 'en',
+                isAr: false,
+                t: {},
+                isTracking: false,
+                isStopped: false,
+                status: 'connecting', // connecting, active, lost
+                
+                mapInstance: null,
+                marker: null,
+                watchId: null,
+                lastSyncTime: 0,
+                SYNC_INTERVAL: 10000,
+                
+                apiEndpoint: '/api/vehicles/guest/location/',
+                token: '{{ token }}',
+
+                initApp() {
+                    this.updateTranslations();
+                },
+
+                updateTranslations() {
+                    this.isAr = this.lang === 'ar';
+                    this.t = translations[this.lang];
+                    setTimeout(() => {
+                        if (window.lucide) window.lucide.createIcons();
+                    }, 50);
+                },
+
+                toggleLang() {
+                    this.lang = this.lang === 'en' ? 'ar' : 'en';
+                    this.updateTranslations();
+                },
+
+                requestTracking() {
+                    if (!navigator.geolocation) {
+                        alert(this.t.alertGeo);
+                        return;
+                    }
+                    this.isTracking = true;
+                    setTimeout(() => {
+                        this.initMap();
+                        this.startLocationWatch();
+                    }, 100);
+                },
+
+                initMap() {
+                    this.mapInstance = L.map('map', { zoomControl: false, attributionControl: false }).setView([0, 0], 2);
+                    
+                    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png', {
+                        subdomains: 'abcd',
+                        maxZoom: 20
+                    }).addTo(this.mapInstance);
+
+                    const customIcon = L.divIcon({
+                        className: 'custom-leaflet-marker',
+                        html: `<div class="pulse-marker-container">
+                                 <div class="pulse-marker-ring"></div>
+                                 <div class="pulse-marker-dot"></div>
+                               </div>`,
+                        iconSize: [32, 32],
+                        iconAnchor: [16, 16]
+                    });
+
+                    this.marker = L.marker([0, 0], {icon: customIcon}).addTo(this.mapInstance);
+                },
+
+                startLocationWatch() {
+                    this.status = 'active';
+                    const options = { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 };
+                    
+                    this.watchId = navigator.geolocation.watchPosition(
+                        (pos) => this.handleLocationSuccess(pos),
+                        (err) => this.handleLocationError(err),
+                        options
+                    );
+                },
+
+                handleLocationSuccess(pos) {
+                    const lat = pos.coords.latitude;
+                    const lng = pos.coords.longitude;
+                    const acc = pos.coords.accuracy;
+
+                    this.marker.setLatLng([lat, lng]);
+                    this.mapInstance.setView([lat, lng], 16);
+
+                    const now = Date.now();
+                    if (now - this.lastSyncTime >= this.SYNC_INTERVAL) {
+                        this.syncLocationServer(lat, lng, acc);
+                        this.lastSyncTime = now;
+                    }
+                },
+
+                handleLocationError(err) {
+                    console.warn(`GPS Error: ${err.message}`);
+                    this.status = 'lost';
+                },
+
+                async syncLocationServer(lat, lng, accuracy) {
+                    try {
+                        const response = await fetch(this.apiEndpoint, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ token: this.token, latitude: lat, longitude: lng, accuracy: accuracy })
+                        });
+
+                        if (!response.ok) {
+                            if(response.status === 403) {
+                                alert(this.t.alertExp);
+                                window.location.reload();
+                            }
+                            this.status = 'lost';
+                        } else {
+                            this.status = 'active';
+                        }
+                    } catch (err) {
+                        this.status = 'lost';
+                    }
+                },
+
+                stopTracking() {
+                    if (confirm(this.t.confirmStop)) {
+                        if (this.watchId !== null) {
+                            navigator.geolocation.clearWatch(this.watchId);
+                        }
+                        this.isTracking = false;
+                        this.isStopped = true;
+                        if(this.mapInstance) {
+                            this.mapInstance.remove();
+                        }
+                        setTimeout(() => {
+                            if (window.lucide) window.lucide.createIcons();
+                        }, 50);
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>

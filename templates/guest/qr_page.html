@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="{{ language }}" dir="{% if language == 'ar' %}rtl{% else %}ltr{% endif %}">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scan2Call | Web Guest</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Tajawal:wght@300;400;500;700;800;900&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        [x-cloak] {
+            display: none !important;
+        }
+
+        .rtl {
+            direction: rtl;
+            text-align: right;
+            font-family: 'Tajawal', sans-serif;
+        }
+
+        .ltr {
+            direction: ltr;
+            text-align: left;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        /* 3D Glassmorphism Utilities */
+        .glass-card {
+            background: linear-gradient(145deg, rgba(21, 21, 42, 0.8) 0%, rgba(15, 15, 28, 0.9) 100%);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5), inset 0 1px 2px rgba(255, 255, 255, 0.1);
+        }
+
+        .inner-shadow {
+            box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.5);
+        }
+
+        .glow-primary {
+            box-shadow: 0 0 20px rgba(26, 115, 232, 0.4);
+        }
+
+        .text-gradient {
+            background: linear-gradient(to right, #ffffff, #94a3b8);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Skeleton Animation */
+        @keyframes shimmer {
+            0% {
+                background-position: -1000px 0;
+            }
+
+            100% {
+                background-position: 1000px 0;
+            }
+        }
+
+        .skeleton {
+            background: #1e293b;
+            background-image: linear-gradient(to right, #1e293b 0%, #334155 20%, #1e293b 40%, #1e293b 100%);
+            background-repeat: no-repeat;
+            background-size: 1000px 100%;
+            animation: shimmer 2s infinite linear;
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1A73E8',
+                        secondary: '#FF6D00',
+                        bgDarkBase: '#0F0F1C',
+                        bgDarkCard: '#15152A',
+                        borderDark: 'rgba(30, 41, 59, 0.8)',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body
+    class="bg-bgDarkBase min-h-screen text-slate-200 transition-colors duration-200 py-6 px-4 relative overflow-x-hidden"
+    x-data="guestApp()" x-init="initApp()" :class="isAr ? 'rtl' : 'ltr'">
+
+    <!-- Ambient Background Glows -->
+    <div
+        class="fixed top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-primary/10 blur-[120px] pointer-events-none">
+    </div>
+    <div
+        class="fixed bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-secondary/10 blur-[120px] pointer-events-none">
+    </div>
+
+    <!-- Loading Skeleton (Shows before Alpine init) -->
+    <div x-show="!initialized" class="p-6 max-w-xl mx-auto rounded-[2rem] glass-card relative z-10 space-y-6">
+        <div class="flex justify-between items-center border-b border-borderDark pb-5">
+            <div class="flex items-center space-x-3">
+                <div class="skeleton h-10 w-10 rounded-xl"></div>
+                <div class="skeleton h-6 w-32 rounded-lg"></div>
+            </div>
+            <div class="skeleton h-8 w-16 rounded-xl"></div>
+        </div>
+        <div class="skeleton h-24 w-full rounded-2xl"></div>
+        <div class="grid grid-cols-2 gap-4">
+            <div class="skeleton h-28 rounded-2xl"></div>
+            <div class="skeleton h-28 rounded-2xl"></div>
+        </div>
+        <div class="skeleton h-12 w-full rounded-xl"></div>
+    </div>
+
+    <!-- Main App Container -->
+    <div x-cloak x-show="initialized" x-transition.opacity.duration.500ms
+        class="p-6 max-w-xl mx-auto rounded-[2rem] glass-card relative z-10">
+
+        <!-- Premium Header -->
+        <div class="flex justify-between items-center border-b border-borderDark pb-5 mb-6">
+            <div class="flex items-center space-x-3" :class="isAr ? 'space-x-reverse' : ''">
+                <div
+                    class="relative group flex items-center justify-center w-12 h-12 bg-white/5 rounded-2xl border border-white/10 shadow-inner overflow-hidden">
+                    <div
+                        class="absolute inset-0 bg-gradient-to-br from-primary/30 to-transparent opacity-0 group-hover:opacity-100 transition duration-500">
+                    </div>
+                    <svg viewBox="0 0 24 24" fill="none"
+                        class="w-6 h-6 text-primary drop-shadow-[0_0_8px_rgba(26,115,232,0.8)] z-10"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 7V5a2 2 0 0 1 2-2h2"></path>
+                        <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
+                        <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path>
+                        <path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
+                        <path
+                            d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z">
+                        </path>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="text-xl font-black tracking-tight text-gradient">Scan2Call</h2>
+                    <p class="text-[10px] text-slate-400 font-medium uppercase tracking-widest"
+                        x-text="isAr ? 'ضيف الويب' : 'Web Guest'"></p>
+                </div>
+            </div>
+
+            <button @click="toggleLang()"
+                class="text-xs font-bold px-3 py-2 rounded-xl flex items-center space-x-1.5 cursor-pointer transition-all bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10 hover:text-white hover:border-white/20 hover:scale-105 shadow-sm"
+                :class="isAr ? 'space-x-reverse' : ''">
+                <i data-lucide="globe" class="h-4 w-4 text-secondary drop-shadow"></i>
+                <span x-text="lang.toUpperCase()"></span>
+            </button>
+        </div>
+
+        <template x-if="!submitted">
+            <div class="space-y-6">
+                <p class="text-sm font-medium leading-relaxed text-slate-400" x-text="t.subtitle"></p>
+
+                <!-- Vehicle Info Card (Premium) -->
+                <div
+                    class="border border-white/10 p-5 rounded-2xl flex items-center justify-between relative bg-gradient-to-br from-white/5 to-transparent backdrop-blur-md overflow-hidden group hover:border-primary/30 transition-all duration-300">
+                    <div
+                        class="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                    </div>
+                    <div class="space-y-1.5 relative z-10">
+                        <p class="text-primary text-[11px] font-bold uppercase tracking-widest flex items-center space-x-1"
+                            :class="isAr ? 'space-x-reverse' : ''">
+                            <i data-lucide="car-front" class="w-3 h-3"></i>
+                            <span
+                                x-text="t.owner_first.replace('{name}', '{{ vehicle.get_brand_display|escapejs }}')"></span>
+                        </p>
+                        <h3 class="text-2xl font-black text-white drop-shadow-md tracking-tight">{{
+                            vehicle.get_brand_display }} {{ vehicle.model }}</h3>
+                        <div class="flex items-center space-x-2 pt-2" :class="isAr ? 'space-x-reverse' : ''">
+                            <span
+                                class="bg-white/10 border border-white/10 text-white text-[11px] font-medium px-3 py-1 rounded-lg shadow-sm flex items-center space-x-1"
+                                :class="isAr ? 'space-x-reverse' : ''">
+                                <span class="w-2 h-2 rounded-full"
+                                    :style="`background-color: {{ vehicle.color|escapejs }};`"></span>
+                                <span>{{ vehicle.get_color_display }}</span>
+                            </span>
+                            <span
+                                class="bg-primary/20 border border-primary/30 text-blue-200 text-[11px] font-mono font-bold px-3 py-1 rounded-lg shadow-sm flex items-center space-x-1"
+                                :class="isAr ? 'space-x-reverse' : ''">
+                                <i data-lucide="hash" class="w-3 h-3"></i>
+                                <span>{{ vehicle.plate_number }}</span>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="h-20 w-20 rounded-2xl flex items-center justify-center select-none shadow-xl overflow-hidden relative bg-white/5 border border-white/10 z-10 group-hover:scale-105 transition-transform duration-300"
+                        x-data="{ 
+                        logoError: false, 
+                        brandStr: '{{ vehicle.brand|escapejs|lower }}',
+                        getLogoUrl() {
+                            let b = this.brandStr.trim().replace(/ /g, '-');
+                            if(b === 'mercedes') b = 'mercedes-benz';
+                            if(b === 'vw') b = 'volkswagen';
+                            if(b === 'chevy') b = 'chevrolet';
+                            if(b === 'other') b = 'car';
+                            return 'https://img.icons8.com/color/96/000000/' + b + '.png';
+                        } 
+                    }">
+                        <img x-show="!logoError" :src="getLogoUrl()" @error="logoError = true"
+                            class="w-full h-full object-contain p-3 drop-shadow-lg">
+                        <div x-show="logoError"
+                            class="absolute inset-0 bg-gradient-to-br from-primary to-blue-700 text-white font-black text-3xl flex items-center justify-center"
+                            x-cloak>
+                            {{ vehicle.get_brand_display|first }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Request Types -->
+                <div class="space-y-4 relative z-10">
+                    <p class="text-sm font-bold text-slate-300 flex items-center space-x-2"
+                        :class="isAr ? 'space-x-reverse' : ''">
+                        <i data-lucide="bell-ring" class="w-4 h-4 text-primary"></i>
+                        <span x-text="t.request_desc"></span>
+                    </p>
+                    <div class="grid grid-cols-2 gap-4">
+
+                        <!-- Move Card -->
+                        <div @click="reportType = 'move'"
+                            class="group rounded-2xl p-4 cursor-pointer text-left transition-all duration-300 select-none flex flex-col justify-between h-[130px] relative overflow-hidden"
+                            :class="reportType === 'move' ? 'bg-primary/10 border-2 border-primary glow-primary' : 'bg-black/20 border border-white/10 hover:bg-white/5 hover:border-primary/50'">
+                            <div
+                                class="absolute top-0 right-0 w-20 h-20 bg-primary/20 rounded-bl-full filter blur-xl group-hover:bg-primary/30 transition-all duration-500">
+                            </div>
+                            <div class="flex justify-between items-start relative z-10">
+                                <div class="p-2.5 rounded-xl transition-colors duration-300"
+                                    :class="reportType === 'move' ? 'bg-primary text-white shadow-lg shadow-primary/40' : 'bg-white/10 text-slate-400 group-hover:text-primary'">
+                                    <i data-lucide="arrow-up-right" class="h-5 w-5"></i>
+                                </div>
+                                <div class="w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors duration-300"
+                                    :class="reportType === 'move' ? 'border-primary bg-primary' : 'border-slate-600'">
+                                    <i data-lucide="check" class="w-3 h-3 text-white"
+                                        x-show="reportType === 'move'"></i>
+                                </div>
+                            </div>
+                            <div class="relative z-10">
+                                <h4 class="font-bold text-white text-sm" x-text="t.move_pleas"></h4>
+                                <p class="text-[11px] text-slate-400 mt-1 leading-snug line-clamp-2"
+                                    x-text="t.move_desc"></p>
+                            </div>
+                        </div>
+
+                        <!-- Emergency Card -->
+                        <div @click="reportType = 'emergency'"
+                            class="group rounded-2xl p-4 cursor-pointer text-left transition-all duration-300 select-none flex flex-col justify-between h-[130px] relative overflow-hidden"
+                            :class="reportType === 'emergency' ? 'bg-red-500/10 border-2 border-red-500 shadow-[0_0_20px_rgba(239,68,68,0.3)]' : 'bg-black/20 border border-white/10 hover:bg-white/5 hover:border-red-500/50'">
+                            <div
+                                class="absolute top-0 right-0 w-20 h-20 bg-red-500/20 rounded-bl-full filter blur-xl group-hover:bg-red-500/30 transition-all duration-500">
+                            </div>
+                            <div class="flex justify-between items-start relative z-10">
+                                <div class="p-2.5 rounded-xl transition-colors duration-300"
+                                    :class="reportType === 'emergency' ? 'bg-red-500 text-white shadow-lg shadow-red-500/40' : 'bg-white/10 text-slate-400 group-hover:text-red-500'">
+                                    <i data-lucide="shield-alert" class="h-5 w-5"></i>
+                                </div>
+                                <div class="w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors duration-300"
+                                    :class="reportType === 'emergency' ? 'border-red-500 bg-red-500' : 'border-slate-600'">
+                                    <i data-lucide="check" class="w-3 h-3 text-white"
+                                        x-show="reportType === 'emergency'"></i>
+                                </div>
+                            </div>
+                            <div class="relative z-10">
+                                <h4 class="font-bold text-white text-sm" x-text="t.emergency"></h4>
+                                <p class="text-[11px] text-slate-400 mt-1 leading-snug line-clamp-2"
+                                    x-text="t.emergency_desc"></p>
+                            </div>
+                        </div>
+
+                        <!-- Ticket Card -->
+                        <div @click="reportType = 'ticket'"
+                            class="group rounded-2xl p-4 cursor-pointer text-left transition-all duration-300 select-none flex flex-col justify-between h-[130px] relative overflow-hidden"
+                            :class="reportType === 'ticket' ? 'bg-yellow-500/10 border-2 border-yellow-500 shadow-[0_0_20px_rgba(234,179,8,0.3)]' : 'bg-black/20 border border-white/10 hover:bg-white/5 hover:border-yellow-500/50'">
+                            <div
+                                class="absolute top-0 right-0 w-20 h-20 bg-yellow-500/20 rounded-bl-full filter blur-xl group-hover:bg-yellow-500/30 transition-all duration-500">
+                            </div>
+                            <div class="flex justify-between items-start relative z-10">
+                                <div class="p-2.5 rounded-xl transition-colors duration-300"
+                                    :class="reportType === 'ticket' ? 'bg-yellow-500 text-white shadow-lg shadow-yellow-500/40' : 'bg-white/10 text-slate-400 group-hover:text-yellow-500'">
+                                    <i data-lucide="badge-alert" class="h-5 w-5"></i>
+                                </div>
+                                <div class="w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors duration-300"
+                                    :class="reportType === 'ticket' ? 'border-yellow-500 bg-yellow-500' : 'border-slate-600'">
+                                    <i data-lucide="check" class="w-3 h-3 text-white"
+                                        x-show="reportType === 'ticket'"></i>
+                                </div>
+                            </div>
+                            <div class="relative z-10">
+                                <h4 class="font-bold text-white text-sm" x-text="t.ticket"></h4>
+                                <p class="text-[11px] text-slate-400 mt-1 leading-snug line-clamp-2"
+                                    x-text="t.ticket_desc"></p>
+                            </div>
+                        </div>
+
+                        <!-- Accident Card -->
+                        <div @click="reportType = 'accident'"
+                            class="group rounded-2xl p-4 cursor-pointer text-left transition-all duration-300 select-none flex flex-col justify-between h-[130px] relative overflow-hidden"
+                            :class="reportType === 'accident' ? 'bg-purple-500/10 border-2 border-purple-500 shadow-[0_0_20px_rgba(168,85,247,0.3)]' : 'bg-black/20 border border-white/10 hover:bg-white/5 hover:border-purple-500/50'">
+                            <div
+                                class="absolute top-0 right-0 w-20 h-20 bg-purple-500/20 rounded-bl-full filter blur-xl group-hover:bg-purple-500/30 transition-all duration-500">
+                            </div>
+                            <div class="flex justify-between items-start relative z-10">
+                                <div class="p-2.5 rounded-xl transition-colors duration-300"
+                                    :class="reportType === 'accident' ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/40' : 'bg-white/10 text-slate-400 group-hover:text-purple-500'">
+                                    <i data-lucide="car-crash" class="h-5 w-5"></i>
+                                </div>
+                                <div class="w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors duration-300"
+                                    :class="reportType === 'accident' ? 'border-purple-500 bg-purple-500' : 'border-slate-600'">
+                                    <i data-lucide="check" class="w-3 h-3 text-white"
+                                        x-show="reportType === 'accident'"></i>
+                                </div>
+                            </div>
+                            <div class="relative z-10">
+                                <h4 class="font-bold text-white text-sm" x-text="t.accident"></h4>
+                                <p class="text-[11px] text-slate-400 mt-1 leading-snug line-clamp-2"
+                                    x-text="t.accident_desc"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Message Box -->
+                <div class="space-y-2 relative z-10">
+                    <label class="text-sm font-bold text-slate-300 flex items-center space-x-2"
+                        :class="isAr ? 'space-x-reverse' : ''">
+                        <i data-lucide="message-square-plus" class="w-4 h-4 text-primary"></i>
+                        <span x-text="t.message_lbl"></span>
+                    </label>
+                    <textarea rows="2" x-model="messageText" :placeholder="t.placeholder"
+                        class="w-full bg-black/20 border border-white/10 rounded-xl p-4 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all shadow-inner resize-none"></textarea>
+                </div>
+
+                <!-- Upload -->
+                <div class="space-y-2 relative z-10">
+                    <label class="text-sm font-bold text-slate-300 flex items-center space-x-2"
+                        :class="isAr ? 'space-x-reverse' : ''">
+                        <i data-lucide="camera" class="w-4 h-4 text-primary"></i>
+                        <span x-text="t.upload_lbl"></span>
+                    </label>
+                    <div
+                        class="relative border-2 border-dashed border-white/20 bg-black/20 hover:bg-white/5 hover:border-primary/50 transition-all rounded-xl p-6 text-center cursor-pointer flex flex-col items-center justify-center space-y-3 group">
+                        <input type="file" accept="image/*,video/*" @change="handleUpload"
+                            class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                        <template x-if="uploading">
+                            <div class="flex flex-col items-center space-y-2">
+                                <svg class="animate-spin h-6 w-6 text-primary" xmlns="http://www.w3.org/2000/svg"
+                                    fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                        stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor"
+                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                    </path>
+                                </svg>
+                                <p class="text-xs text-primary font-bold animate-pulse"
+                                    x-text="isAr ? 'جاري الرفع...' : 'Uploading...'"></p>
+                            </div>
+                        </template>
+                        <template x-if="!uploading && mediaFile">
+                            <div class="flex flex-col items-center space-y-2">
+                                <div
+                                    class="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center text-green-400">
+                                    <i data-lucide="check-circle" class="h-6 w-6"></i>
+                                </div>
+                                <span class="text-green-400 text-xs font-bold" x-text="t.attachment_ready"></span>
+                            </div>
+                        </template>
+                        <template x-if="!uploading && !mediaFile">
+                            <div class="flex flex-col items-center justify-center">
+                                <div
+                                    class="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center group-hover:scale-110 group-hover:bg-primary/20 transition-all duration-300 mb-2">
+                                    <i data-lucide="upload-cloud"
+                                        class="h-6 w-6 text-slate-400 group-hover:text-primary transition-colors"></i>
+                                </div>
+                                <p class="text-xs text-slate-400 font-medium" x-text="t.click_drag"></p>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Call Action -->
+                <div class="relative z-10 pt-2">
+                    {% if show_phone and owner_phone %}
+                    <a href="tel:{{ owner_phone }}"
+                        class="flex items-center justify-between bg-gradient-to-r from-green-600/20 to-green-500/10 hover:from-green-600/30 hover:to-green-500/20 border border-green-500/30 p-4 rounded-2xl text-left shadow-lg transition-all hover:scale-[1.02] group"
+                        :class="isAr ? 'text-right' : 'text-left'">
+                        <div class="flex items-center space-x-3" :class="isAr ? 'space-x-reverse' : ''">
+                            <div
+                                class="h-10 w-10 bg-green-500/20 rounded-xl flex items-center justify-center group-hover:bg-green-500/30 transition-colors">
+                                <i data-lucide="phone-call" class="h-5 w-5 text-green-400 animate-pulse"></i>
+                            </div>
+                            <div>
+                                <h5 class="font-bold text-white text-sm"
+                                    x-text="isAr ? 'اتصال مباشر: {{ owner_phone|escapejs }}' : 'Direct Call: {{ owner_phone|escapejs }}'">
+                                </h5>
+                                <p class="text-[11px] text-slate-400 mt-0.5"
+                                    x-text="isAr ? 'المالك يفضل التواصل المباشر لحل المشكلة فورا' : 'Owner prefers direct calls for quick coordination'">
+                                </p>
+                            </div>
+                        </div>
+                        <span
+                            class="bg-green-500 hover:bg-green-400 text-white text-xs font-bold py-2 px-4 rounded-xl shadow-[0_0_15px_rgba(34,197,94,0.4)] transition-colors"
+                            x-text="isAr ? 'اتصل' : 'Call'"></span>
+                    </a>
+                    {% elif allow_call %}
+                    <div class="flex items-center space-x-3 bg-white/5 border border-white/10 p-4 rounded-2xl text-left shadow-md select-none"
+                        :class="isAr ? 'text-right space-x-reverse' : 'text-left'">
+                        <div
+                            class="h-10 w-10 bg-secondary/20 border border-secondary/30 rounded-xl flex items-center justify-center">
+                            <i data-lucide="phone-forwarded" class="h-5 w-5 text-secondary"></i>
+                        </div>
+                        <div>
+                            <h5 class="font-bold text-white text-sm"
+                                x-text="isAr ? 'مكالمة هاتفية مشفرة' : 'Masked Phone Call'"></h5>
+                            <p class="text-[11px] text-slate-400 mt-0.5" x-text="t.allow_call"></p>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="flex items-center space-x-3 bg-black/20 border border-white/5 p-4 rounded-2xl text-left shadow-md select-none"
+                        :class="isAr ? 'text-right space-x-reverse' : 'text-left'">
+                        <div class="h-10 w-10 bg-white/5 rounded-xl flex items-center justify-center">
+                            <i data-lucide="message-square-off" class="h-5 w-5 text-slate-500"></i>
+                        </div>
+                        <div>
+                            <h5 class="font-bold text-slate-300 text-sm"
+                                x-text="isAr ? 'محادثة نصية فقط' : 'Chat Only'"></h5>
+                            <p class="text-[11px] text-slate-500 mt-0.5"
+                                x-text="isAr ? 'المالك يفضل إرسال بلاغ ومحادثته عبر التطبيق' : 'Owner prefers to be contacted via app chat'">
+                            </p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Error Message -->
+                <template x-if="errorMsg">
+                    <div class="bg-red-500/10 border-l-4 border-red-500 text-red-200 p-4 rounded-xl text-sm relative z-10 flex items-start space-x-3"
+                        :class="isAr ? 'space-x-reverse' : ''">
+                        <i data-lucide="alert-circle" class="w-5 h-5 text-red-500 shrink-0"></i>
+                        <span x-text="errorMsg"></span>
+                    </div>
+                </template>
+
+                <!-- Submit Button -->
+                <button @click="submitRequest()" :disabled="isSubmitting"
+                    class="w-full bg-gradient-to-r from-primary to-blue-600 hover:from-blue-600 hover:to-blue-800 text-white font-bold text-sm py-4 rounded-xl transition-all shadow-[0_8px_25px_rgba(26,115,232,0.5)] flex items-center justify-center space-x-2 relative z-10 mt-6"
+                    :class="[isAr ? 'space-x-reverse' : '', isSubmitting ? 'opacity-70 cursor-not-allowed' : 'hover:-translate-y-1']">
+                    <i data-lucide="send" class="h-5 w-5" x-show="!isSubmitting"></i>
+                    <svg x-show="isSubmitting" class="animate-spin h-5 w-5 text-white"
+                        xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" x-cloak>
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+                        </circle>
+                        <path class="opacity-75" fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                        </path>
+                    </svg>
+                    <span x-text="isSubmitting ? (isAr ? 'جاري الإرسال...' : 'Processing...') : t.submit"></span>
+                </button>
+            </div>
+        </template>
+
+        <!-- Active Chat State -->
+        <template x-if="submitted">
+            <div class="space-y-6 relative z-10">
+                <div
+                    class="bg-gradient-to-r from-green-500/20 to-green-500/5 border border-green-500/30 rounded-2xl p-4 flex items-center justify-between shadow-[0_0_20px_rgba(34,197,94,0.15)]">
+                    <div class="flex items-center space-x-3" :class="isAr ? 'space-x-reverse' : ''">
+                        <div class="w-10 h-10 bg-green-500/20 rounded-full flex items-center justify-center">
+                            <i data-lucide="check-circle" class="h-5 w-5 text-green-400"></i>
+                        </div>
+                        <p class="text-sm font-bold text-green-300" x-text="t.success_message"></p>
+                    </div>
+                </div>
+
+                <div
+                    class="bg-bgDarkCard border border-white/10 rounded-[1.5rem] overflow-hidden flex flex-col h-[400px] shadow-2xl relative">
+                    <div
+                        class="bg-black/40 backdrop-blur-md border-b border-white/10 text-white px-5 py-4 text-xs font-bold flex items-center justify-between">
+                        <div class="flex items-center space-x-2" :class="isAr ? 'space-x-reverse' : ''">
+                            <i data-lucide="message-circle" class="w-4 h-4 text-primary"></i>
+                            <span x-text="t.chat_active" class="tracking-wide"></span>
+                        </div>
+                        <span
+                            class="flex items-center space-x-1.5 bg-green-500/10 border border-green-500/20 text-green-400 text-[10px] px-2.5 py-1 rounded-lg"
+                            :class="isAr ? 'space-x-reverse' : ''">
+                            <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                            <span>LIVE</span>
+                        </span>
+                    </div>
+
+                    <!-- Chat Messages -->
+                    <div class="flex-1 p-5 overflow-y-auto space-y-4 bg-transparent flex flex-col scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent"
+                        id="chat-container">
+                        <template x-for="msg in chatMessages" :key="msg.id">
+                            <div class="flex flex-col max-w-[85%]"
+                                :class="msg.sender === 'scanner' ? (isAr ? 'mr-auto items-start' : 'ml-auto items-end') : (isAr ? 'ml-auto items-end' : 'mr-auto items-start')">
+                                <div class="p-3.5 rounded-2xl text-sm leading-relaxed shadow-md backdrop-blur-md border"
+                                    :class="msg.sender === 'scanner' ? 'bg-primary border-primary/50 text-white ' + (isAr ? 'rounded-tl-sm' : 'rounded-tr-sm') : 'bg-white/5 border-white/10 text-slate-200 ' + (isAr ? 'rounded-tr-sm' : 'rounded-tl-sm')">
+                                    <template x-if="msg.attachment">
+                                        <img :src="msg.attachment"
+                                            class="max-w-full h-auto rounded-xl mb-2 object-cover max-h-48 cursor-pointer border border-white/10 shadow-sm hover:opacity-90 transition-opacity"
+                                            @click="window.open(msg.attachment, '_blank')">
+                                    </template>
+                                    <span x-text="msg.content"></span>
+                                </div>
+                                <span class="text-[10px] text-slate-500 mt-1.5 px-1 font-medium"
+                                    x-text="msg.time"></span>
+                            </div>
+                        </template>
+                    </div>
+
+                    <!-- Input Box -->
+                    <div class="p-4 bg-black/40 backdrop-blur-md border-t border-white/10 flex items-center space-x-3"
+                        :class="isAr ? 'space-x-reverse' : ''">
+                        <input type="file" x-ref="chatAttachment" class="hidden" accept="image/*"
+                            @change="sendChatAttachment($event)">
+                        <button @click="$refs.chatAttachment.click()"
+                            class="text-slate-400 hover:text-primary hover:bg-white/5 p-2.5 rounded-xl transition-all shrink-0">
+                            <i data-lucide="paperclip" class="h-5 w-5"></i>
+                        </button>
+                        <input type="text" x-model="guestMsgLine" @keydown.enter="sendMessage()"
+                            :placeholder="t.type_msg"
+                            class="flex-1 bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all shadow-inner">
+                        <button @click="sendMessage()" :disabled="!guestMsgLine.trim()"
+                            class="bg-primary hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white p-3 rounded-xl transition-all shadow-lg shrink-0">
+                            <i data-lucide="send" class="h-5 w-5"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <button
+                        @click="localStorage.removeItem('scan2call_guest_session_' + qrHash); window.location.reload()"
+                        class="bg-white/5 hover:bg-white/10 text-slate-300 text-sm font-bold py-4 rounded-xl border border-white/10 transition-colors shadow-sm flex items-center justify-center space-x-2"
+                        :class="isAr ? 'space-x-reverse' : ''">
+                        <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                        <span x-text="isAr ? 'بلاغ جديد' : 'New Report'"></span>
+                    </button>
+
+                    {% if show_phone and owner_phone %}
+                    <a href="tel:{{ owner_phone }}"
+                        class="bg-green-600 hover:bg-green-500 text-white text-sm font-bold py-4 rounded-xl transition-all shadow-[0_0_15px_rgba(34,197,94,0.3)] flex items-center justify-center space-x-2"
+                        :class="isAr ? 'space-x-reverse' : ''">
+                        <i data-lucide="phone" class="w-4 h-4"></i>
+                        <span x-text="isAr ? 'اتصال بالمالك' : 'Call Owner'"></span>
+                    </a>
+                    {% else %}
+                    <button
+                        @click="alert(isAr ? 'المالك يفضل إبقاء رقمه مخفياً. يتم تحويل المكالمات المشفرة لضمان الخصوصية...' : 'Owner prefers keeping their phone private. Voice dial routing...')"
+                        class="bg-secondary hover:bg-orange-500 text-white text-sm font-bold py-4 rounded-xl transition-all shadow-[0_0_15px_rgba(255,109,0,0.3)] flex items-center justify-center space-x-2"
+                        :class="isAr ? 'space-x-reverse' : ''">
+                        <i data-lucide="phone-forwarded" class="w-4 h-4"></i>
+                        <span x-text="t.call_btn"></span>
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </template>
+    </div>
+
+    <script>
+        const translations = {
+            en: {
+                choose_car: "Select target scanned car",
+                subtitle: "Smart street notification portal. Let the owner know about double-parking or emergency status anonymously.",
+                owner_first: "{name}'s Mapped Car Detail",
+                allow_call: "Voice calls are masked to enforce safety.",
+                request_desc: "Pick one category to dispatch alerts:",
+                move_pleas: "Move Please",
+                move_desc: "You are blocking driveway exit routes.",
+                emergency: "Emergency",
+                emergency_desc: "Immediate danger (windows open, alarm).",
+                ticket: "Traffic Ticket",
+                ticket_desc: "Traffic police spotted nearby.",
+                accident: "Scratch spots",
+                accident_desc: "Observed scratch marks or active fluid leaks.",
+                message_lbl: "Message Details (Optional)",
+                upload_lbl: "Photo/Video Evidence (Max 20MB)",
+                submit: "Dispatch Alert Now",
+                chat_active: "Anonymous Chat Session",
+                send_msg: "Send Message",
+                type_msg: "Type your message...",
+                success_message: "Alert notification sent to owner successfully!",
+                call_btn: "Masked Call",
+                placeholder: "Describe the situation shortly...",
+                attachment_ready: "Attachment Ready",
+                click_drag: "Click to upload media"
+            },
+            ar: {
+                choose_car: "اختر السيارة المطلوب فحصها",
+                subtitle: "بوابة الإخطار الفوري. أبلغ مالك السيارة المزدوجة بالتحرك أو بوجود حالة طارئة بأمان تام ومجهولية.",
+                owner_first: "تفاصيل سيارة {name}",
+                allow_call: "المكالمات الصوتية مشفرة لضمان أمان خصوصيتك.",
+                request_desc: "اختر نوع التنبيه لإرساله فوراً للمالك:",
+                move_pleas: "تحريك السيارة",
+                move_desc: "سيارتك تعوق حركة خروج السيارات.",
+                emergency: "حالة طوارئ",
+                emergency_desc: "خطر داهم (حريق، زجاج مكسور، إنذار).",
+                ticket: "مخالفة مرورية",
+                ticket_desc: "ونش المرور يقوم برصد وسحب السيارات.",
+                accident: "خدش أو حادث",
+                accident_desc: "رصد احتكاك، صدمة، أو تسريب.",
+                message_lbl: "تفاصيل إضافية (اختياري)",
+                upload_lbl: "إرفاق صورة/فيديو (الحد الأقصى ٢٠ ميجا)",
+                submit: "إرسال التنبيه الآن",
+                chat_active: "محادثة آمنة ومجهولة",
+                send_msg: "إرسال",
+                type_msg: "اكتب رسالتك...",
+                success_message: "تم إرسال التنبيه الفوري لهاتف المالك بنجاح!",
+                call_btn: "اتصال مشفر",
+                placeholder: "اكتب وصفاً سريعاً للحالة...",
+                attachment_ready: "المرفق جاهز للإرسال",
+                click_drag: "اضغط لإرفاق ملف"
+            }
+        };
+
+        function guestApp() {
+            return {
+                initialized: false,
+                lang: '{{ language|escapejs }}',
+                isAr: '{{ language|escapejs }}' === 'ar',
+                t: translations['{{ language|escapejs }}'] || translations['en'],
+                qrHash: '{{ qr_hash|escapejs }}',
+                reportType: null,
+                messageText: '',
+                mediaFile: null,
+                uploading: false,
+                isSubmitting: false,
+                submitted: false,
+                chatToken: null,
+                chatId: null,
+                ws: null,
+                chatMessages: [],
+                guestMsgLine: '',
+                errorMsg: '',
+
+                initApp() {
+                    this.updateTranslations();
+                    const savedSession = localStorage.getItem('scan2call_guest_session_' + this.qrHash);
+                    if (savedSession) {
+                        const session = JSON.parse(savedSession);
+                        this.chatToken = session.chatToken;
+                        this.chatId = session.chatId;
+                        this.submitted = true;
+
+                        setTimeout(() => {
+                            this.fetchChatHistory();
+                            this.connectWebSocket();
+                        }, 50);
+                    }
+                    setTimeout(() => {
+                        this.initialized = true;
+                        if (window.lucide) lucide.createIcons();
+                    }, 500); // Artificial delay to show skeleton loader
+                },
+
+                updateTranslations() {
+                    this.isAr = this.lang === 'ar';
+                    this.t = translations[this.lang];
+                    setTimeout(() => {
+                        if (window.lucide) window.lucide.createIcons();
+                    }, 50);
+                },
+
+                toggleLang() {
+                    this.lang = this.lang === 'en' ? 'ar' : 'en';
+                    this.updateTranslations();
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('lang', this.lang);
+                    window.history.pushState({}, '', url);
+                },
+
+                handleUpload(e) {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    if (file.size > 20 * 1024 * 1024) {
+                        this.errorMsg = this.isAr ? 'حجم الملف يجب أن يكون أقل من ٢٠ ميجا' : 'File size must be less than 20MB';
+                        return;
+                    }
+                    this.errorMsg = '';
+                    this.uploading = true;
+                    setTimeout(() => {
+                        this.mediaFile = file;
+                        this.uploading = false;
+                        setTimeout(() => { if (window.lucide) lucide.createIcons(); }, 50);
+                    }, 800);
+                },
+
+                async submitRequest() {
+                    if (!this.reportType) {
+                        this.errorMsg = this.isAr ? 'الرجاء اختيار نوع البلاغ أولاً' : 'Please select an alert type first';
+                        return;
+                    }
+                    this.errorMsg = '';
+                    this.isSubmitting = true;
+
+                    let deviceId = localStorage.getItem('scan2call_device_id');
+                    if (!deviceId) {
+                        deviceId = 'web_' + Math.random().toString(36).substr(2, 9);
+                        localStorage.setItem('scan2call_device_id', deviceId);
+                    }
+
+                    const formData = new FormData();
+                    formData.append('qr_hash', this.qrHash);
+                    formData.append('type', this.reportType);
+                    formData.append('message', this.messageText);
+                    formData.append('scanner_device_id', deviceId);
+                    if (this.mediaFile) {
+                        formData.append('media_url', this.mediaFile);
+                    }
+
+                    try {
+                        const response = await fetch('/api/requests/guest/requests/', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        const data = await response.json();
+
+                        if (!response.ok) {
+                            throw new Error(data.error || (this.isAr ? 'حدث خطأ أثناء إرسال التنبيه' : 'An error occurred while sending the alert'));
+                        }
+
+                        this.chatToken = data.chat_token;
+                        this.chatId = data.chat_id;
+                        this.submitted = true;
+
+                        localStorage.setItem('scan2call_guest_session_' + this.qrHash, JSON.stringify({
+                            chatToken: this.chatToken,
+                            chatId: this.chatId
+                        }));
+
+                        setTimeout(() => {
+                            if (window.lucide) lucide.createIcons();
+                            this.connectWebSocket();
+                        }, 50);
+
+                    } catch (err) {
+                        this.errorMsg = err.message;
+                    } finally {
+                        this.isSubmitting = false;
+                    }
+                },
+
+                async fetchChatHistory() {
+                    if (!this.chatToken) return;
+                    try {
+                        const response = await fetch('/api/chat/guest/' + this.chatToken + '/messages/');
+                        if (response.ok) {
+                            const messages = await response.json();
+                            this.chatMessages = messages.map(msg => ({
+                                id: msg.id,
+                                content: msg.content,
+                                sender: msg.sender,
+                                attachment: msg.attachment,
+                                time: new Date(msg.created_at || msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                            }));
+                            this.scrollToBottom();
+                        } else if (response.status === 400) {
+                            localStorage.removeItem('scan2call_guest_session_' + this.qrHash);
+                            this.submitted = false;
+                        }
+                    } catch (e) {
+                        console.error('Failed to fetch history', e);
+                    }
+                },
+
+                connectWebSocket() {
+                    if (!this.chatToken || !this.chatId) return;
+
+                    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                    const wsUrl = protocol + '//' + window.location.host + '/ws/chat/' + this.chatId + '/?scanner_token=' + this.chatToken;
+
+                    this.ws = new WebSocket(wsUrl);
+
+                    this.ws.onmessage = (e) => {
+                        const data = JSON.parse(e.data);
+                        if (data.type === 'message') {
+                            const msg = data.message;
+                            this.chatMessages.push({
+                                id: msg.id,
+                                content: msg.content,
+                                sender: msg.sender,
+                                attachment: msg.attachment,
+                                time: new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                            });
+                            this.scrollToBottom();
+                        } else if (data.type === 'chat_ended') {
+                            alert(this.isAr ? 'تم حل المشكلة بواسطة صاحب السيارة. شكراً لك!' : 'The problem has been resolved by the owner. Thank you!');
+                            localStorage.removeItem('scan2call_guest_session_' + this.qrHash);
+                            this.submitted = false;
+                            if (this.ws) {
+                                this.ws.close();
+                            }
+                        }
+                    };
+
+                    this.ws.onclose = () => {
+                        console.log('Chat connection closed');
+                    };
+                },
+
+                sendMessage() {
+                    if (!this.guestMsgLine.trim() || !this.ws) return;
+
+                    this.ws.send(JSON.stringify({
+                        'type': 'chat_message',
+                        'content': this.guestMsgLine
+                    }));
+
+                    this.guestMsgLine = '';
+                },
+
+                async sendChatAttachment(event) {
+                    const file = event.target.files[0];
+                    if (!file || !this.chatToken) return;
+
+                    const formData = new FormData();
+                    formData.append('attachment', file);
+                    formData.append('content', this.guestMsgLine.trim() || (this.isAr ? 'صورة مرفقة' : 'Attached image'));
+
+                    try {
+                        const response = await fetch('/api/chat/guest/' + this.chatToken + '/messages/', {
+                            method: 'POST',
+                            body: formData
+                        });
+
+                        if (response.ok) {
+                            this.guestMsgLine = '';
+                        }
+                    } catch (e) {
+                        console.error('Failed to upload image', e);
+                    }
+
+                    event.target.value = '';
+                },
+
+                scrollToBottom() {
+                    setTimeout(() => {
+                        const container = document.getElementById('chat-container');
+                        if (container) {
+                            container.scrollTop = container.scrollHeight;
+                        }
+                    }, 100);
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>

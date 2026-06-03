@@ -1,0 +1,22 @@
+[
+  {
+    "model": "vehicles.carbrand",
+    "pk": 1,
+    "fields": {
+      "slug": "toyota",
+      "name": "Toyota",
+      "name_ar": "تويوتا",
+      "logo": "brands/toyota.png"
+    }
+  },
+  {
+    "model": "vehicles.carbrand",
+    "pk": 2,
+    "fields": {
+      "slug": "bmw",
+      "name": "BMW",
+      "name_ar": "بي ام دبليو",
+      "logo": "brands/bmw.png"
+    }
+  }
+]

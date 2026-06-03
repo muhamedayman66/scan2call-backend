@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="{{ language }}" dir="{% if language == 'ar' %}rtl{% else %}ltr{% endif %}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if language == 'ar' %}توقف الخدمة{% else %}Service Inactive{% endif %} | Scan2Call</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            font-family: 'Inter', system-ui, -apple-system, sans-serif; 
+            background-color: #0F0F1C; 
+            color: #F1F5F9; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            height: 100vh; 
+            margin: 0; 
+            text-align: center; 
+            overflow: hidden;
+            position: relative;
+        }
+        .glow-1 {
+            position: absolute;
+            top: -10%; left: -10%; width: 40%; height: 40%;
+            background: rgba(26, 115, 232, 0.2);
+            border-radius: 50%;
+            filter: blur(120px);
+            pointer-events: none;
+        }
+        .glow-2 {
+            position: absolute;
+            bottom: -10%; right: -10%; width: 40%; height: 40%;
+            background: rgba(255, 109, 0, 0.1);
+            border-radius: 50%;
+            filter: blur(120px);
+            pointer-events: none;
+        }
+        .card { 
+            background: linear-gradient(145deg, rgba(21, 21, 42, 0.9) 0%, rgba(15, 15, 28, 0.95) 100%);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3), inset 0 1px 1px 0 rgba(255, 255, 255, 0.05);
+            padding: 3rem 2rem; 
+            border-radius: 2rem; 
+            max-width: 400px; 
+            width: 90%; 
+            position: relative;
+            z-index: 10;
+        }
+        .icon-container {
+            width: 80px; height: 80px;
+            margin: 0 auto 1.5rem auto;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 1.5rem;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.2);
+        }
+        .icon-container span {
+            font-size: 2.5rem;
+            filter: drop-shadow(0 0 10px rgba(239, 68, 68, 0.5));
+        }
+        h1 { 
+            color: #F87171; 
+            margin-bottom: 1rem; 
+            font-size: 1.5rem; 
+            font-weight: 900;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+        p { 
+            color: #94A3B8; 
+            font-size: 0.95rem; 
+            line-height: 1.6; 
+            margin-bottom: 0; 
+        }
+    </style>
+</head>
+<body>
+    <div class="glow-1"></div>
+    <div class="glow-2"></div>
+    <div class="card">
+        <div class="icon-container">
+            <span>🚫</span>
+        </div>
+        {% if language == 'ar' %}
+        <h1 style="font-family: 'Cairo', 'Inter', sans-serif;">هذا الـ QR Code غير نشط حالياً</h1>
+        <p style="font-family: 'Cairo', 'Inter', sans-serif;">لا يمكن إتمام الطلب لأن اشتراك صاحب السيارة منتهي. نعتذر عن الإزعاج.</p>
+        {% else %}
+        <h1>This QR Code is inactive</h1>
+        <p>The request cannot be completed because the vehicle owner's subscription has expired. We apologize for the inconvenience.</p>
+        {% endif %}
+    </div>
+</body>
+</html>
